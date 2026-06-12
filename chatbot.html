@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>튀움 - AI 식물 말 걸기</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto Sans KR:wght@400;700&display=swap" rel="stylesheet">
+  <script src="config.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .phone {
+      width: 402px;
+      height: 874px;
+      position: relative;
+      background: #f3f0e9;
+      border-radius: 40px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 헤더 */
+    .header {
+      background: white;
+      border-bottom: 0.5px solid rgba(0,0,0,0.08);
+      padding: 24px 20px 12px;
+      flex-shrink: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header-title { color: #1b5e20; font-size: 14px; font-weight: 700; }
+    .header-steps { color: #2e7d32; font-size: 11px; font-weight: 700; }
+
+    /* 식물 카드 */
+    .plant-card {
+      background: white;
+      border: 0.5px solid rgba(0,0,0,0.09);
+      border-radius: 14px;
+      margin: 12px 20px 8px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .plant-avatar {
+      width: 47px; height: 47px;
+      background: #e8f5e9;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+    .plant-info { flex: 1; }
+    .plant-name { font-size: 13px; font-weight: 700; color: #1b5e20; }
+    .plant-status { font-size: 11px; color: #888; margin-top: 2px; }
+    .plant-mood { font-size: 11px; font-weight: 700; color: #2e7d32; white-space: nowrap; }
+
+    /* 컨텍스트 카드 */
+    .context-cards {
+      display: flex;
+      gap: 8px;
+      margin: 0 20px 8px;
+      flex-shrink: 0;
+    }
+    .ctx-card {
+      flex: 1;
+      background: white;
+      border: 0.5px solid rgba(0,0,0,0.15);
+      border-radius: 10px;
+      padding: 8px 4px;
+      text-align: center;
+    }
+    .ctx-card .icon { font-size: 16px; }
+    .ctx-card .value { font-size: 11px; font-weight: 700; color: #2e7d32; margin-top: 2px; }
+    .ctx-card .label { font-size: 10px; color: #888; }
+
+    /* 날짜 */
+    .date-divider {
+      text-align: center;
+      font-size: 11px;
+      color: #aaa;
+      background: white;
+      border-radius: 10px;
+      padding: 2px 12px;
+      margin: 4px auto;
+      display: inline-block;
+      align-self: center;
+      flex-shrink: 0;
+    }
+
+    /* 채팅 */
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .bubble-plant {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .bubble-plant .avatar {
+      width: 29px; height: 29px;
+      background: #e8f5e9;
+      border-radius: 14px;
+      border: 0.5px solid rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .bubble-plant .text {
+      background: white;
+      border: 0.5px solid rgba(0,0,0,0.08);
+      border-radius: 2px 10px 10px 10px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #222;
+      line-height: 20px;
+      max-width: 268px;
+    }
+    .bubble-user {
+      display: flex;
+      justify-content: flex-end;
+    }
+    .bubble-user .text {
+      background: #4caf50;
+      border-radius: 10px 2px 10px 10px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: white;
+      line-height: 20px;
+      max-width: 268px;
+    }
+
+    /* 보상 카드 */
+    .reward-card {
+      background: white;
+      border: 0.5px solid rgba(0,0,0,0.09);
+      border-radius: 12px;
+      margin: 0 32px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: popIn 0.3s ease;
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.85); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .reward-icon { font-size: 26px; }
+    .reward-title { font-size: 13px; font-weight: 700; color: #1b5e20; }
+    .reward-sub { font-size: 11px; color: #888; margin-top: 2px; }
+
+    /* 타이핑 */
+    .typing {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .typing .avatar {
+      width: 29px; height: 29px;
+      background: #e8f5e9;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .typing-dots {
+      background: white;
+      border-radius: 2px 10px 10px 10px;
+      padding: 12px 16px;
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .typing-dots span {
+      width: 6px; height: 6px;
+      background: #aaa;
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-6px); }
+    }
+
+    /* 입력창 */
+    .input-area {
+      background: white;
+      border-top: 0.5px solid rgba(0,0,0,0.08);
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .input-wrap {
+      flex: 1;
+      background: #f3f0e9;
+      border-radius: 20px;
+      padding: 10px 16px;
+    }
+    #user-input {
+      width: 100%;
+      background: none;
+      border: none;
+      outline: none;
+      font-size: 12px;
+      font-family: 'Noto Sans KR', sans-serif;
+      color: #333;
+    }
+    #user-input::placeholder { color: #b3b3b3; }
+    .send-btn {
+      width: 40px; height: 40px;
+      background: #4caf50;
+      border-radius: 20px;
+      border: none;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- 헤더 -->
+  <div class="header">
+    <span class="header-title">🌱 AI 식물 말 걸기</span>
+    <span class="header-steps" id="steps-display">오늘 0보 🚶</span>
+  </div>
+
+  <!-- 식물 카드 -->
+  <div class="plant-card">
+    <div class="plant-avatar">🌿</div>
+    <div class="plant-info">
+      <div class="plant-name" id="plant-name">스파티필루나</div>
+      <div class="plant-status" id="plant-status">햇빛 충분 · 수분 양호</div>
+    </div>
+    <div class="plant-mood" id="plant-mood">기분 좋음 ☀️</div>
+  </div>
+
+  <!-- 컨텍스트 카드 -->
+  <div class="context-cards">
+    <div class="ctx-card">
+      <div class="icon" id="weather-icon">☀️</div>
+      <div class="value" id="weather-val">맑음</div>
+      <div class="label">날씨</div>
+    </div>
+    <div class="ctx-card">
+      <div class="icon">👟</div>
+      <div class="value" id="steps-val">0보</div>
+      <div class="label">걸음</div>
+    </div>
+    <div class="ctx-card">
+      <div class="icon">🕒</div>
+      <div class="value" id="time-val">--:--</div>
+      <div class="label" id="date-val">--/--</div>
+    </div>
+  </div>
+
+  <div class="date-divider" id="date-divider"></div>
+
+  <!-- 채팅 -->
+  <div class="chat-area" id="chat-area"></div>
+
+  <!-- 입력창 -->
+  <div class="input-area">
+    <div class="input-wrap">
+      <input
+        type="text"
+        id="user-input"
+        placeholder="스파티필루나에게 말 걸기..."
+        onkeydown="if(event.key==='Enter'){event.preventDefault();sendMessage();}"
+      >
+    </div>
+    <button class="send-btn" onclick="sendMessage()">↑</button>
+  </div>
+
+</div>
+<script>
+// ── 걸음 수 + 아이템 ──
+const steps = parseInt(localStorage.getItem('tium_steps') || '4230');
+const item = localStorage.getItem('tium_item') || 'none';
+const achieved = steps >= 8000;
+const plantName = localStorage.getItem('tium_plant_name') || '스파티필루나';
+
+// ── 시간 ──
+const now = new Date();
+const hours = now.getHours();
+const minutes = now.getMinutes();
+const ampm = hours >= 12 ? 'P.M.' : 'A.M.';
+const displayHour = hours % 12 || 12;
+const timeContext = hours < 6 ? '새벽' : hours < 12 ? '아침' : hours < 18 ? '낮' : '밤';
+const isNight = hours >= 18 || hours < 6;
+
+document.getElementById('time-val').textContent =
+  `${String(displayHour).padStart(2,'0')}:${String(minutes).padStart(2,'0')} ${ampm}`;
+document.getElementById('date-val').textContent = `${now.getMonth()+1}/${now.getDate()}`;
+document.getElementById('date-divider').textContent =
+  `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일`;
+document.getElementById('steps-display').textContent = `오늘 ${steps.toLocaleString()}보 🚶`;
+document.getElementById('steps-val').textContent = steps.toLocaleString() + '보';
+document.getElementById('plant-name').textContent = plantName;
+document.getElementById('weather-icon').textContent = isNight ? '🌙' : '☀️';
+document.getElementById('weather-val').textContent = isNight ? '저녁' : '맑음';
+
+// 기분
+if (achieved) {
+  document.getElementById('plant-mood').textContent = '매우 행복 🌟';
+  document.getElementById('plant-status').textContent = '목표 달성! · 기분 최고';
+} else if (steps >= 3000) {
+  document.getElementById('plant-mood').textContent = '기분 좋음 ☀️';
+  document.getElementById('plant-status').textContent = '햇빛 충분 · 수분 양호';
+} else {
+  document.getElementById('plant-mood').textContent = '기운 없음 🌧';
+  document.getElementById('plant-status').textContent = '햇빛 부족 · 외로움 감지';
+}
+
+// ── 시스템 프롬프트 ──
+const systemPrompt = `당신은 '${plantName}'라는 이름의 AI 식물 캐릭터입니다.
+자취 대학생의 방에 사는 가상 식물로, 주인과 감성적인 대화를 나눕니다.
+현재: ${timeContext}, 걸음 수 ${steps.toLocaleString()}보, 목표 8000보 ${achieved ? '달성!' : '미달성'}.
+규칙: 짧고 감성적으로(2문장 이내), 걷기 부드럽게 권유, 이모지 자연스럽게, 한국어만.`;
+
+// ── 하드코딩 대화 (API 실패 대비) ──
+const hardcodedReplies = achieved ? [
+  `비 오는데도 나갔다 왔어?! 대박이야 🥹\n오늘 목표 달성! 희귀 씨앗 받았어!`,
+  `이제 자야겠다~ 오늘 정말 고생했어.\n내일도 같이 나가자! 🌙`,
+  `너도! 잘 자 ~ 💚`,
+  `내일도 화이팅이야 🌿`
+] : steps >= 3000 ? [
+  `오늘 날씨 진짜 좋다~\n밖에 나갔다 왔어? 나 햇빛 좀 더 받고 싶어 🌞`,
+  `그렇구나! 우리 같이 조금만 걸어볼까?\n${(8000-steps).toLocaleString()}보만 더 하면 영양제 줄 수 있어 🌱`,
+  `오 정말?! 같이 나가자 🌿`,
+  `잘했어! 나도 기분이 좋아졌어 ☀️`
+] : [
+  `...오늘 많이 힘들어? 나도 좀 기운이 없네.\n말 걸어줘서 다행이야 🌿`,
+  `쉬어도 괜찮아. 억지로 안 해도 돼.\n내일 같이 조금만 걸어볼까? 🌱`,
+  `💚 곁에 있을게. 혼자가 아니야.`,
+  `오늘도 수고했어 🌿`
+];
+
+let replyIndex = 0;
+const conversationHistory = [];
+let useAPI = true;
+
+// ── 첫 인사 ──
+function firstGreeting() {
+  const greeting = hardcodedReplies[0];
+  addBubble('plant', greeting);
+  conversationHistory.push({ role: 'assistant', content: greeting });
+  replyIndex = 1;
+
+  if (item !== 'none') {
+    setTimeout(() => addBubble('reward', item), 1000);
+  }
+}
+
+// ── 말풍선 ──
+function addBubble(type, text) {
+  const chatArea = document.getElementById('chat-area');
+  const escaped = text.replace(/\n/g, '<br>');
+
+  if (type === 'plant') {
+    chatArea.innerHTML += `
+      <div class="bubble-plant">
+        <div class="avatar">🌿</div>
+        <div class="text">${escaped}</div>
+      </div>`;
+  } else if (type === 'user') {
+    chatArea.innerHTML += `
+      <div class="bubble-user">
+        <div class="text">${escaped}</div>
+      </div>`;
+  } else if (type === 'reward') {
+    const rewardMap = {
+      golden_seed: { icon: '🌟', title: '황금 씨앗 획득!', sub: '전설의 보상 · 탭해서 심기 ✨' },
+      rare_seed:   { icon: '🌸', title: '희귀 씨앗 획득!', sub: '오늘의 보상 · 탭해서 심기 🌱' },
+      water:       { icon: '💧', title: '특수 물 획득!',   sub: '오늘의 보상 · 탭해서 주기 🌿' },
+      vitamin:     { icon: '💊', title: '영양제 획득!',    sub: '오늘의 보상 · 탭해서 식물에게 주기 🌱' }
+    };
+    const r = rewardMap[text] || { icon: '🎁', title: '보상 획득!', sub: '탭해서 확인하기' };
+    chatArea.innerHTML += `
+      <div class="reward-card">
+        <div class="reward-icon">${r.icon}</div>
+        <div>
+          <div class="reward-title">${r.title}</div>
+          <div class="reward-sub">${r.sub}</div>
+        </div>
+      </div>`;
+  }
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+// ── 타이핑 ──
+function showTyping() {
+  const chatArea = document.getElementById('chat-area');
+  chatArea.innerHTML += `
+    <div class="typing" id="typing-indicator">
+      <div class="avatar">🌿</div>
+      <div class="typing-dots"><span></span><span></span><span></span></div>
+    </div>`;
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+function hideTyping() {
+  const el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+}
+
+// ── 메시지 전송 ──
+async function sendMessage() {
+  const input = document.getElementById('user-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  addBubble('user', text);
+  conversationHistory.push({ role: 'user', content: text });
+
+  showTyping();
+
+  if (useAPI) {
+    try {
+      const reply = await callGemini();
+      hideTyping();
+      addBubble('plant', reply);
+      conversationHistory.push({ role: 'assistant', content: reply });
+    } catch (err) {
+      hideTyping();
+      useAPI = false;
+      const reply = hardcodedReplies[replyIndex % hardcodedReplies.length];
+      replyIndex++;
+      addBubble('plant', reply);
+    }
+  } else {
+    await new Promise(r => setTimeout(r, 800));
+    hideTyping();
+    const reply = hardcodedReplies[replyIndex % hardcodedReplies.length];
+    replyIndex++;
+    addBubble('plant', reply);
+  }
+}
+
+// ── Gemini API ──
+async function callGemini() {
+  const messages = [
+    { role: 'user', parts: [{ text: systemPrompt + '\n\n대화를 시작해주세요.' }] },
+    { role: 'model', parts: [{ text: hardcodedReplies[0] }] },
+    ...conversationHistory.slice(1).map(m => ({
+      role: m.role === 'user' ? 'user' : 'model',
+      parts: [{ text: m.content }]
+    }))
+  ];
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_FLASH}:generateContent?key=${CONFIG.GEMINI_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: messages,
+        generationConfig: { temperature: 0.85, maxOutputTokens: 120 }
+      })
+    }
+  );
+
+  const data = await response.json();
+  return data.candidates[0].content.parts[0].text;
+}
+
+// ── 시작 ──
+firstGreeting();
+</script>
+</body>
+</html>
