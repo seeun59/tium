@@ -249,7 +249,10 @@
 
   <!-- 헤더 -->
   <div class="header">
-    <span class="header-title">🌱 AI 식물 말 걸기</span>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <a href="index.html" style="width:28px;height:28px;background:rgba(255,255,255,0.5);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;text-decoration:none;color:#334b1b;flex-shrink:0;">←</a>
+      <span class="header-title">🌱 AI 식물 말 걸기</span>
+    </div>
     <span class="header-steps" id="steps-display">오늘 0보 🚶</span>
   </div>
 
@@ -302,6 +305,13 @@
 
 </div>
 <script>
+// ── Make URL 파라미터 자동 수신 ──
+const urlParams = new URLSearchParams(window.location.search);
+const stepsParam = urlParams.get('steps');
+const itemParam = urlParams.get('item');
+if (stepsParam) localStorage.setItem('tium_steps', stepsParam);
+if (itemParam) localStorage.setItem('tium_item', itemParam);
+
 // ── 걸음 수 + 아이템 ──
 const steps = parseInt(localStorage.getItem('tium_steps') || '4230');
 const item = localStorage.getItem('tium_item') || 'none';

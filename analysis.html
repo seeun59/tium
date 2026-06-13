@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>튀움 - 방 분위기 분석</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
-  <script src="config.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -21,21 +20,200 @@
       height: 874px;
       position: relative;
       overflow: hidden;
-      background: #e0e1dd;
+      background: #f3f0e9;
       border-radius: 40px;
       box-shadow: 0 30px 80px rgba(0,0,0,0.5);
     }
-    #bg-img {
+
+    /* 뒤로가기 */
+    .back-btn {
       position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
+      top: 12px; left: 12px;
+      width: 32px; height: 32px;
+      background: rgba(255,255,255,0.5);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      cursor: pointer;
+      text-decoration: none;
+      color: #334b1b;
+      z-index: 100;
+      backdrop-filter: blur(4px);
+    }
+
+    /* 공통 화면 */
+    .screen {
+      position: absolute;
+      inset: 0;
+      width: 402px;
+      height: 874px;
+    }
+    .hidden { display: none !important; }
+
+    /* ── 1단계: 업로드 ── */
+    #screen-upload {
+      background: #e0e1dd;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+    .upload-icon { font-size: 64px; }
+    .upload-title { font-size: 18px; font-weight: 700; color: #334b1b; }
+    .upload-sub { font-size: 13px; color: #888; text-align: center; line-height: 1.6; }
+    .upload-btn {
+      margin-top: 8px;
+      background: #334b1b;
+      color: white;
+      border: none;
+      border-radius: 14px;
+      width: 240px; height: 50px;
+      font-size: 15px; font-weight: 700;
+      font-family: 'Noto Sans KR', sans-serif;
+      cursor: pointer;
+    }
+    #file-input { display: none; }
+
+    /* ── 2단계: 스캔 ── */
+    #screen-scan {
       display: none;
     }
-    #capture-canvas { display: none; }
+    #scan-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
 
-    /* 헤더 */
-    .header {
+    /* 그리드 오버레이 */
+    .grid-overlay {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(106,136,52,0.45) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(106,136,52,0.45) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: 2;
+    }
+
+    /* 테두리 */
+    .scan-border {
+      position: absolute;
+      inset: 0;
+      border: 10px solid #46612a;
+      border-radius: 40px;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .scan-border-top {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 6px;
+      background: #6a8834;
+      z-index: 4;
+      border-radius: 40px 40px 0 0;
+    }
+
+    /* 스캔 라인 */
+    .scan-line {
+      position: absolute;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #6aaa5a, transparent);
+      box-shadow: 0 0 12px #6aaa5a;
+      animation: scanMove 2s linear infinite;
+      z-index: 5;
+    }
+    @keyframes scanMove {
+      0% { top: 0; }
+      100% { top: 100%; }
+    }
+
+    /* 상단 힌트 */
+    .scan-hint {
+      position: absolute;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      white-space: nowrap;
+      z-index: 6;
+    }
+    .scan-status {
+      position: absolute;
+      top: 120px;
+      width: 100%;
+      text-align: center;
+      color: white;
+      font-size: 16px;
+      z-index: 6;
+    }
+
+    /* 스캔 완료 뱃지 */
+    .scan-done-badge {
+      position: absolute;
+      top: 152px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #334b1b;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: 500;
+      z-index: 10;
+      display: none;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    /* 하단 탭바 (스캔화면) */
+    .scan-tabbar {
+      position: absolute;
+      bottom: 20px;
+      left: 90px;
+      width: 222px; height: 56px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 10;
+    }
+    .scan-tab-btn {
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; cursor: pointer; color: #abb7c2;
+    }
+    .scan-tab-center {
+      width: 50px; height: 50px;
+      background: linear-gradient(133deg, #7c9d4e 0%, #386230 100%);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; color: white;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.14);
+      outline: 6px solid rgba(124,157,78,0.3);
+      margin-top: -14px;
+    }
+
+    /* ── 3단계: 분석결과 ── */
+    #screen-result {
+      display: none;
+    }
+    #result-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .result-header {
       position: absolute;
       top: 42px; left: 45px;
       width: 312px; height: 44px;
@@ -48,8 +226,8 @@
       padding: 0 14px;
       z-index: 10;
     }
-    .header-title { color: #4CAF50; font-size: 16px; font-weight: 700; }
-    .header-badge {
+    .result-header-title { color: #4CAF50; font-size: 16px; font-weight: 700; }
+    .result-header-badge {
       background: #e8f5e9;
       border-radius: 12px;
       padding: 3px 10px;
@@ -58,66 +236,10 @@
       font-weight: 600;
       white-space: nowrap;
     }
-
-    /* 업로드 영역 */
-    #upload-area {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      background: #e0e1dd;
-      z-index: 5;
-    }
-    .upload-icon { font-size: 64px; }
-    .upload-title { font-size: 18px; font-weight: 700; color: #334b1b; }
-    .upload-sub { font-size: 13px; color: #888; text-align: center; line-height: 1.6; }
-    .upload-btn {
-      margin-top: 8px;
-      background: #334b1b;
-      color: white;
-      border: none;
-      border-radius: 14px;
-      width: 240px;
-      height: 50px;
-      font-size: 15px;
-      font-weight: 700;
-      font-family: 'Noto Sans KR', sans-serif;
-      cursor: pointer;
-    }
-    #file-input { display: none; }
-
-    /* 로딩 */
-    #loading {
-      position: absolute;
-      inset: 0;
-      background: rgba(0,0,0,0.65);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 20;
-      gap: 16px;
-    }
-    .spinner {
-      width: 52px; height: 52px;
-      border: 4px solid rgba(255,255,255,0.2);
-      border-top: 4px solid #4CAF50;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-text { color: white; font-size: 14px; text-align: center; line-height: 1.8; }
-
-    /* 바텀 시트 */
-    #bottom-sheet {
+    .bottom-sheet {
       position: absolute;
       bottom: 0; left: 0;
-      width: 402px;
-      height: 510px;
+      width: 402px; height: 510px;
       background: rgba(242,240,233,0.97);
       border-radius: 24px 24px 0 0;
       z-index: 10;
@@ -131,8 +253,7 @@
       margin: 0 auto 14px;
     }
     .section-title {
-      font-size: 15px;
-      font-weight: 700;
+      font-size: 15px; font-weight: 700;
       color: #1a1a1a;
       text-shadow: 1px 1px 1px rgba(255,255,255,0.5);
       margin: 0 45px 8px;
@@ -144,9 +265,7 @@
       outline: 0.5px solid rgba(0,0,0,0.2);
       box-shadow: 1px 1px 1px rgba(0,0,0,0.1);
       padding: 10px 14px;
-      font-size: 12px;
-      color: #333;
-      line-height: 20px;
+      font-size: 12px; color: #333; line-height: 20px;
     }
     .recommend-card {
       margin: 0 45px 14px;
@@ -163,141 +282,438 @@
     .ar-btn {
       display: block;
       margin: 4px 45px 0;
-      width: 312px;
-      height: 50px;
+      width: 312px; height: 50px;
+      background: #334b1b; color: white;
+      border: 2px solid white;
+      border-radius: 14px;
+      font-size: 15px; font-weight: 700;
+      font-family: 'Noto Sans KR', sans-serif;
+      cursor: pointer;
+    }
+
+    /* ── 4단계: 그리드 + 식물카드 ── */
+    #screen-grid {
+      display: none;
+    }
+    #grid-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .grid-overlay2 {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(106,136,52,0.45) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(106,136,52,0.45) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: 2;
+    }
+    .scan-border2 {
+      position: absolute;
+      inset: 0;
+      border: 10px solid #46612a;
+      border-radius: 40px;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .grid-done-badge {
+      position: absolute;
+      top: 152px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #334b1b;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      z-index: 10;
+      white-space: nowrap;
+    }
+
+    /* 식물 카드 팝업 */
+    .plant-popup {
+      position: absolute;
+      bottom: 100px;
+      left: 93px;
+      width: 216px;
+      background: rgba(255,255,255,0.95);
+      border-radius: 10px;
+      outline: 1px solid rgba(0,0,0,0.2);
+      box-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 10;
+    }
+    .plant-popup-img {
+      width: 91px; height: 101px;
+      background: #eee9df;
+      border-radius: 10px;
+      border: 0.5px solid rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .plant-popup-img img { width: 100%; height: 100%; object-fit: contain; }
+    .plant-popup-info { flex: 1; }
+    .plant-popup-text {
+      font-size: 12px; color: black;
+      text-shadow: 1px 1px 4px white;
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    .plant-popup-btn {
+      background: rgba(70,97,42,0.85);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 6px 14px;
+      font-size: 13px; font-weight: 600;
+      font-family: 'Noto Sans KR', sans-serif;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    /* ── 5단계: 배치 선택 ── */
+    #screen-place {
+      display: none;
+    }
+    #place-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .grid-overlay3 {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(106,136,52,0.45) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(106,136,52,0.45) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: 2;
+    }
+    .scan-border3 {
+      position: absolute;
+      inset: 0;
+      border: 10px solid #46612a;
+      border-radius: 40px;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .place-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.2);
+      z-index: 4;
+    }
+    .place-buttons {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      z-index: 10;
+    }
+    .place-btn {
+      width: 238px; height: 45px;
+      background: rgba(78,104,52,0.8);
+      border: none;
+      border-radius: 5px;
+      outline: 1px solid rgba(255,255,255,0.5);
+      color: white;
+      font-size: 17px; font-weight: 600;
+      font-family: 'Noto Sans KR', sans-serif;
+      cursor: pointer;
+    }
+
+    /* 배치 완료 화면 */
+    #screen-placed {
+      display: none;
+    }
+    #placed-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .grid-overlay4 {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(106,136,52,0.45) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(106,136,52,0.45) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: 2;
+    }
+    .scan-border4 {
+      position: absolute;
+      inset: 0;
+      border: 10px solid #46612a;
+      border-radius: 40px;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .placed-badge {
+      position: absolute;
+      top: 152px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #334b1b;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 16px; font-weight: 600;
+      z-index: 10;
+      white-space: nowrap;
+    }
+    .placed-plant {
+      position: absolute;
+      bottom: 180px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      z-index: 10;
+      filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3));
+      animation: plantPop 0.5s ease;
+    }
+    @keyframes plantPop {
+      0% { transform: translateX(-50%) scale(0); opacity: 0; }
+      100% { transform: translateX(-50%) scale(1); opacity: 1; }
+    }
+    .home-btn {
+      position: absolute;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
       background: #334b1b;
       color: white;
       border: 2px solid white;
       border-radius: 14px;
-      font-size: 15px;
-      font-weight: 700;
+      width: 220px; height: 48px;
+      font-size: 15px; font-weight: 700;
       font-family: 'Noto Sans KR', sans-serif;
       cursor: pointer;
+      z-index: 10;
+      text-decoration: none;
+      display: flex; align-items: center; justify-content: center;
     }
-    .hidden { display: none !important; }
   </style>
 </head>
 <body>
 <div class="phone">
 
-  <!-- 배경 이미지 -->
-  <img id="bg-img" alt="방 사진">
-  <canvas id="capture-canvas" width="402" height="874"></canvas>
+  <!-- 뒤로가기 -->
+  <a href="index.html" class="back-btn">←</a>
 
-  <!-- 헤더 -->
-  <div class="header">
-    <span class="header-title">🌱 튀움 (Tium)</span>
-    <span class="header-badge" id="header-badge">사진을 촬영해주세요</span>
-  </div>
-
-  <!-- 업로드 영역 -->
-  <div id="upload-area">
+  <!-- ── 1단계: 업로드 ── -->
+  <div id="screen-upload" class="screen">
     <div class="upload-icon">📷</div>
     <div class="upload-title">방 사진 업로드</div>
-    <div class="upload-sub">사진을 촬영하면<br>Gemini 2.0이 방을 분석해드려요</div>
+    <div class="upload-sub">사진을 업로드하면<br>AI가 방을 분석해드려요</div>
     <button class="upload-btn" onclick="document.getElementById('file-input').click()">
-      📸 사진 촬영하기
+      📂 사진 선택하기
     </button>
-    <input type="file" id="file-input" accept="image/*" onchange="handleUpload(event)">
+    <input type="file" id="file-input" accept="image/*" onchange="startScan(event)">
   </div>
 
-  <!-- 로딩 -->
-  <div id="loading" class="hidden">
-    <div class="spinner"></div>
-    <div class="loading-text">Gemini 2.0 Vision 분석 중...<br>방의 분위기와 채광을 파악하고 있어요 🌱</div>
-  </div>
-
-  <!-- 바텀 시트 -->
-  <div id="bottom-sheet" class="hidden">
-    <div class="drag-bar"></div>
-    <p class="section-title">방 분위기 및 채광 분석</p>
-    <div class="analysis-card" id="room-analysis">분석 중...</div>
-    <p class="section-title">선택한 식물 분석</p>
-    <div class="analysis-card" id="plant-analysis">분석 중...</div>
-    <div class="recommend-card">
-      <div class="spot-title">📍 AI 추천 배치 스팟</div>
-      <div class="spot-divider"></div>
-      <div class="spot-location" id="spot-location">분석 중...</div>
-      <div class="spot-desc" id="spot-desc">분석 중...</div>
+  <!-- ── 2단계: 스캔 ── -->
+  <div id="screen-scan" class="screen">
+    <img id="scan-bg" alt="방 사진">
+    <div class="grid-overlay"></div>
+    <div class="scan-border"></div>
+    <div class="scan-border-top"></div>
+    <div class="scan-line" id="scan-line"></div>
+    <div class="scan-hint">📱 방 바닥을 천천히 비춰주세요</div>
+    <div class="scan-status" id="scan-status">방 스캔 중 ....</div>
+    <div class="scan-done-badge" id="scan-done-badge">✓ 스캔 완료!</div>
+    <div class="scan-tabbar">
+      <div class="scan-tab-btn">↩</div>
+      <div class="scan-tab-center">⊕</div>
+      <div class="scan-tab-btn">✓</div>
     </div>
-    <button class="ar-btn" onclick="goToAR()">AR 배치하기</button>
+  </div>
+
+  <!-- ── 3단계: 분석결과 ── -->
+  <div id="screen-result" class="screen">
+    <img id="result-bg" alt="방 사진">
+    <div class="result-header">
+      <span class="result-header-title">🌱 튀움 (Tium)</span>
+      <span class="result-header-badge">Gemini 2.0 Vision 분석 완료</span>
+    </div>
+    <div class="bottom-sheet">
+      <div class="drag-bar"></div>
+      <p class="section-title">방 분위기 및 채광 분석</p>
+      <div class="analysis-card">
+        현재 공간은 모던 네추럴 톤의 정갈한 인테리어예요.<br>
+        창문을 통한 은은한 간접광이 들어오는<br>
+        반양지 환경으로 분석되었어요.
+      </div>
+      <p class="section-title">선택한 식물 분석</p>
+      <div class="analysis-card">
+        따뜻한 베이지 톤 화분에 심어진 새싹 식물이에요.<br>
+        공간의 그레이 색조에 따스함을 더해주기<br>
+        딱 좋은 아이템이에요!
+      </div>
+      <div class="recommend-card">
+        <div class="spot-title">📍 AI 추천 배치 스팟</div>
+        <div class="spot-divider"></div>
+        <div class="spot-location">[소파 앞 러그 왼쪽 모서리 영역]</div>
+        <div class="spot-desc">
+          아담한 크기의 화분이므로 바닥 러그의 기하학적 패턴 위에<br>
+          올려두었을 때 가장 안정감 있고 예쁘게 연출돼요!
+        </div>
+      </div>
+      <button class="ar-btn" onclick="showGrid()">AR 배치하기</button>
+    </div>
+  </div>
+
+  <!-- ── 4단계: 그리드 + 식물카드 ── -->
+  <div id="screen-grid" class="screen">
+    <img id="grid-bg" alt="방 사진">
+    <div class="grid-overlay2"></div>
+    <div class="scan-border2"></div>
+    <div class="grid-done-badge">✓ 스캔 완료!</div>
+    <div class="plant-popup">
+      <div class="plant-popup-img">
+        <img src="images/plant1.png" alt="식물">
+      </div>
+      <div class="plant-popup-info">
+        <div class="plant-popup-text">새롭게<br>생성된 AI 식물이 있어요!</div>
+        <button class="plant-popup-btn" onclick="showPlace()">배치하기</button>
+      </div>
+    </div>
+    <div class="scan-tabbar">
+      <div class="scan-tab-btn" onclick="showResult()">↩</div>
+      <div class="scan-tab-center">⊕</div>
+      <div class="scan-tab-btn">✓</div>
+    </div>
+  </div>
+
+  <!-- ── 5단계: 배치 선택 ── -->
+  <div id="screen-place" class="screen">
+    <img id="place-bg" alt="방 사진">
+    <div class="grid-overlay3"></div>
+    <div class="scan-border3"></div>
+    <div class="place-overlay"></div>
+    <div class="place-buttons">
+      <button class="place-btn" onclick="placePlant()">AI 추천 식물 배치 하기</button>
+      <button class="place-btn" onclick="placePlant()">직접 식물 배치 하기</button>
+    </div>
+    <div class="scan-tabbar">
+      <div class="scan-tab-btn" onclick="showGrid()">↩</div>
+      <div class="scan-tab-center">⊕</div>
+      <div class="scan-tab-btn">✓</div>
+    </div>
+  </div>
+
+  <!-- ── 6단계: 배치 완료 ── -->
+  <div id="screen-placed" class="screen">
+    <img id="placed-bg" alt="방 사진">
+    <div class="grid-overlay4"></div>
+    <div class="scan-border4"></div>
+    <div class="placed-badge">✓ 배치 완료!</div>
+    <img class="placed-plant" src="images/plant1.png" alt="배치된 식물">
+    <a href="index.html" class="home-btn">🏠 홈으로 돌아가기</a>
+    <div class="scan-tabbar">
+      <div class="scan-tab-btn" onclick="showPlace()">↩</div>
+      <div class="scan-tab-center">⊕</div>
+      <div class="scan-tab-btn">✓</div>
+    </div>
   </div>
 
 </div>
 <script>
-async function handleUpload(event) {
+let uploadedImgSrc = '';
+
+// 1 → 2: 스캔 시작
+function startScan(event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  // 이미지 미리보기
   const reader = new FileReader();
-  reader.onload = async (e) => {
-    const bgImg = document.getElementById('bg-img');
-    bgImg.src = e.target.result;
-    bgImg.style.display = 'block';
+  reader.onload = (e) => {
+    uploadedImgSrc = e.target.result;
 
-    document.getElementById('upload-area').classList.add('hidden');
-    document.getElementById('loading').classList.remove('hidden');
-    document.getElementById('header-badge').textContent = 'Gemini 분석 중...';
+    // 배경 이미지 세팅
+    document.getElementById('scan-bg').src = uploadedImgSrc;
 
-    const base64 = e.target.result.split(',')[1];
-    try {
-      const result = await analyzeWithGemini(base64);
-      showResult(result);
-    } catch (err) {
-      alert('분석 실패: ' + err.message);
-      document.getElementById('loading').classList.add('hidden');
-      document.getElementById('upload-area').classList.remove('hidden');
-    }
+    // 화면 전환
+    document.getElementById('screen-upload').style.display = 'none';
+    document.getElementById('screen-scan').style.display = 'block';
+
+    // 스캔 상태 텍스트 순서
+    const statusTexts = [
+      '방 스캔 중 ....',
+      '방의 분위기, 채광을 분석하고 있어요...',
+      '좋은 장소를 추천해드릴게요...'
+    ];
+    let idx = 0;
+    const statusEl = document.getElementById('scan-status');
+    const timer = setInterval(() => {
+      idx++;
+      if (idx < statusTexts.length) {
+        statusEl.textContent = statusTexts[idx];
+      }
+    }, 1500);
+
+    // 4초 후 스캔 완료
+    setTimeout(() => {
+      clearInterval(timer);
+      document.getElementById('scan-line').style.display = 'none';
+      statusEl.style.display = 'none';
+      document.getElementById('scan-done-badge').style.display = 'block';
+
+      // 1.5초 후 결과 화면
+      setTimeout(() => {
+        showResult();
+      }, 1500);
+    }, 4000);
   };
   reader.readAsDataURL(file);
 }
 
-async function analyzeWithGemini(base64Image) {
-  const prompt = `당신은 인테리어 전문가이자 식물 큐레이터입니다.
-이 방 사진을 분석하고 아래 JSON 형식으로만 응답해주세요. 다른 텍스트는 절대 포함하지 마세요.
-{
-  "room_analysis": "방의 분위기, 채광, 색감을 2-3문장으로 분석",
-  "plant_analysis": "이 공간에 어울리는 식물 특성을 2-3문장으로 설명",
-  "spot_location": "[구체적인 배치 위치]",
-  "spot_desc": "그 위치에 배치하면 좋은 이유를 1-2문장으로"
-}`;
-
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_FLASH}:generateContent?key=${CONFIG.GEMINI_API_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            { text: prompt },
-            { inline_data: { mime_type: 'image/jpeg', data: base64Image } }
-          ]
-        }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 512 }
-      })
-    }
-  );
-
-  const data = await response.json();
-  const text = data.candidates[0].content.parts[0].text;
-  const clean = text.replace(/```json|```/g, '').trim();
-  return JSON.parse(clean);
+// 3: 분석결과
+function showResult() {
+  hideAll();
+  document.getElementById('result-bg').src = uploadedImgSrc;
+  document.getElementById('screen-result').style.display = 'block';
 }
 
-function showResult(result) {
-  document.getElementById('loading').classList.add('hidden');
-  document.getElementById('bottom-sheet').classList.remove('hidden');
-  document.getElementById('header-badge').textContent = 'Gemini 2.0 Vision 분석 완료';
-  document.getElementById('room-analysis').textContent = result.room_analysis;
-  document.getElementById('plant-analysis').textContent = result.plant_analysis;
-  document.getElementById('spot-location').textContent = result.spot_location;
-  document.getElementById('spot-desc').textContent = result.spot_desc;
+// 4: 그리드 + 식물카드
+function showGrid() {
+  hideAll();
+  document.getElementById('grid-bg').src = uploadedImgSrc;
+  document.getElementById('screen-grid').style.display = 'block';
 }
 
-function goToAR() {
-  window.location.href = 'index.html';
+// 5: 배치 선택
+function showPlace() {
+  hideAll();
+  document.getElementById('place-bg').src = uploadedImgSrc;
+  document.getElementById('screen-place').style.display = 'block';
+}
+
+// 6: 배치 완료
+function placePlant() {
+  hideAll();
+  document.getElementById('placed-bg').src = uploadedImgSrc;
+  document.getElementById('screen-placed').style.display = 'block';
+}
+
+function hideAll() {
+  ['screen-upload','screen-scan','screen-result',
+   'screen-grid','screen-place','screen-placed'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
 }
 </script>
 </body>
